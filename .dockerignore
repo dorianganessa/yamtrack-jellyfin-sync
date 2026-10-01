@@ -1,0 +1,9 @@
+.git
+.env*
+secrets
+*.bundle
+*.tar.gz
+__pycache__
+state
+tests
+*.md

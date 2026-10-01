@@ -1,0 +1,57 @@
+name: yamtrack-jellyfin-sync
+services:
+  sync:
+    build: .
+    container_name: yamtrack-jellyfin-sync
+    user: "${PUID:-1000}:${PGID:-1000}"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 0.5
+    stop_grace_period: 45s
+    environment:
+      YAMTRACK_USER_ID: ${YAMTRACK_USER_ID:?Set YAMTRACK_USER_ID}
+      JELLYFIN_USER_ID: ${JELLYFIN_USER_ID:?Set JELLYFIN_USER_ID}
+      JELLYFIN_URL: ${JELLYFIN_URL:-http://host.docker.internal:8096}
+      SYNC_INTERVAL: ${SYNC_INTERVAL:-300}
+      SYNC_MAX_WRITES: ${SYNC_MAX_WRITES:-100}
+      SYNC_WRITE_DELAY: ${SYNC_WRITE_DELAY:-0.1}
+      SYNC_HTTP_TIMEOUT: ${SYNC_HTTP_TIMEOUT:-20}
+      SYNC_HTTP_RETRIES: ${SYNC_HTTP_RETRIES:-2}
+      SYNC_REPORT_RETENTION: ${SYNC_REPORT_RETENTION:-100}
+      SYNC_DRY_RUN: ${SYNC_DRY_RUN:-true}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - type: bind
+        source: ${YAMTRACK_DB_DIR:?Set YAMTRACK_DB_DIR to the database directory}
+        target: /source
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SYNC_STATE_DIR:-./state}
+        target: /state
+        bind:
+          create_host_path: false
+    secrets:
+      - jellyfin_api_key
+    networks: [sync]
+    healthcheck:
+      test: [CMD, python, /app/sync.py, health]
+      interval: 60s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "3"
+secrets:
+  jellyfin_api_key:
+    file: ${JELLYFIN_SECRET_FILE:-./secrets/jellyfin_api_key}
+networks:
+  sync: {}
