@@ -105,7 +105,7 @@ class Jellyfin:
         url = self.url + path
         if query:
             url += "?" + urllib.parse.urlencode(query)
-        req = urllib.request.Request(url, headers={"X-Emby-Token": self.key}, method=method,
+        req = urllib.request.Request(url, headers={"Authorization": 'MediaBrowser Token="' + self.key + '"'}, method=method,
                                      data=b"" if method == "POST" else None)
         try:
             with self.opener.open(req, timeout=self.timeout) as response:

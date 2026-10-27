@@ -160,6 +160,9 @@ class FakeServer(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(value).encode())
 
     def do_GET(self):
+        if self.headers.get("Authorization") != 'MediaBrowser Token="test"':
+            self.respond({}, 401)
+            return
         path = urllib.parse.urlsplit(self.path)
         if path.path == "/Users/" + USER:
             self.respond({"Id": USER})
@@ -180,6 +183,9 @@ class FakeServer(BaseHTTPRequestHandler):
             self.respond({}, 404)
 
     def do_POST(self):
+        if self.headers.get("Authorization") != 'MediaBrowser Token="test"':
+            self.respond({}, 401)
+            return
         if urllib.parse.urlsplit(self.path).path != "/Users/" + USER + "/PlayedItems/" + MOVIE:
             self.respond({}, 403)
             return
